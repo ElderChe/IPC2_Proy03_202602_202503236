@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="SAT.API/SAT.API.csproj" />
+  <Project Path="SAT.Frontend/SAT.Frontend.csproj" />
+</Solution>
