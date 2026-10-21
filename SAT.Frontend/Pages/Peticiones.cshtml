@@ -1,0 +1,192 @@
+﻿@page
+@model SAT.Frontend.Pages.PeticionesModel
+@{
+    ViewData["Title"] = "Peticiones y Reportes";
+}
+
+<!-- Librería para Gráficas -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="container mt-4" id="area-reporte">
+    <h2 id="titulo-principal">Peticiones y Reportes</h2>
+    <button class="btn btn-danger mb-4" onclick="exportarPDF()" id="btn-exportar">Exportar Reporte a PDF</button>
+
+    <div class="row" id="seccion-formularios">
+        <!-- 1. Consultar Contribuyente -->
+        <div class="col-md-4 mb-3">
+            <div class="card p-3 shadow-sm h-100">
+                <h5>1. Consultar Contribuyente</h5>
+                <label>NIT:</label>
+                <input type="text" id="nitCont" class="form-control mb-2" />
+                <label>Tipo:</label>
+                <select id="tipoCont" class="form-select mb-2">
+                    <option value="emitidas">Emitidas</option>
+                    <option value="recibidas">Recibidas</option>
+                </select>
+                <label>Inicio:</label>
+                <input type="date" id="inicioCont" class="form-control mb-2" />
+                <label>Fin:</label>
+                <input type="date" id="finCont" class="form-control mb-2" />
+                <button class="btn btn-primary" onclick="consultarContribuyente()">Consultar</button>
+            </div>
+        </div>
+
+        <!-- 2. Resumen IVA -->
+        <div class="col-md-4 mb-3">
+            <div class="card p-3 shadow-sm h-100">
+                <h5>2. Resumen de IVA por Fecha</h5>
+                <label>Fecha:</label>
+                <input type="date" id="fechaIva" class="form-control mb-3" />
+                <button class="btn btn-primary mt-auto" onclick="resumenIva()">Consultar</button>
+            </div>
+        </div>
+
+        <!-- 3. Resumen por Rango -->
+        <div class="col-md-4 mb-3">
+            <div class="card p-3 shadow-sm h-100">
+                <h5>3. Resumen por Rango</h5>
+                <label>Inicio:</label>
+                <input type="date" id="inicioRango" class="form-control mb-2" />
+                <label>Fin:</label>
+                <input type="date" id="finRango" class="form-control mb-2" />
+                <label>Formato:</label>
+                <select id="formatoRango" class="form-select mb-2">
+                    <option value="true">Con IVA (Total)</option>
+                    <option value="false">Sin IVA</option>
+                </select>
+                <button class="btn btn-primary" onclick="resumenRango()">Consultar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Zona de Resultados -->
+    <div class="mt-4" id="resultados">
+        <h4 id="titulo-resultado">Resultados aparecerán aquí...</h4>
+        <div id="tabla-contenedor" class="table-responsive mb-4"></div>
+        <canvas id="miGrafica" style="max-height: 400px; display: none;"></canvas>
+    </div>
+</div>
+
+<script>
+    const baseUrl = '@Model.UrlApiReportes';
+    let chartInstance = null;
+
+    async function consultarContribuyente() {
+        const nit = document.getElementById('nitCont').value;
+        const tipo = document.getElementById('tipoCont').value;
+        const inicio = document.getElementById('inicioCont').value;
+        const fin = document.getElementById('finCont').value;
+
+        if(!nit || !inicio || !fin) return alert("Llena todos los campos");
+
+        const res = await fetch(`${baseUrl}/por-contribuyente?nit=${nit}&tipo=${tipo}&inicio=${inicio}&fin=${fin}`);
+        const data = await res.json();
+
+        document.getElementById('titulo-resultado').innerText = `Facturas ${tipo} - NIT: ${nit} (Gran Total: Q${data.granTotal.toFixed(2)})`;
+
+        let html = `<table class="table table-bordered"><tr><th>Fecha</th><th>Cantidad de Facturas</th><th>Monto Total</th></tr>`;
+        data.porDia.forEach(d => {
+            html += `<tr><td>${d.fecha}</td><td>${d.cantidad}</td><td>Q${d.monto.toFixed(2)}</td></tr>`;
+        });
+        html += `</table>`;
+        document.getElementById('tabla-contenedor').innerHTML = html;
+        destruirGrafica();
+    }
+
+    async function resumenIva() {
+        const fecha = document.getElementById('fechaIva').value;
+        if(!fecha) return alert("Selecciona una fecha");
+
+        const res = await fetch(`${baseUrl}/resumen-iva?fecha_pedida=${fecha}`);
+        const data = await res.json();
+
+        document.getElementById('titulo-resultado').innerText = `Resumen de IVA - Fecha: ${fecha}`;
+
+        let html = `<table class="table table-bordered"><tr><th>NIT</th><th>IVA Emitido</th><th>IVA Recibido</th></tr>`;
+        let nits = [], emitido = [], recibido = [];
+
+        data.forEach(d => {
+            html += `<tr><td>${d.nit}</td><td>Q${d.ivaEmitido.toFixed(2)}</td><td>Q${d.ivaRecibido.toFixed(2)}</td></tr>`;
+            nits.push(d.nit);
+            emitido.push(d.ivaEmitido);
+            recibido.push(d.ivaRecibido);
+        });
+        html += `</table>`;
+        document.getElementById('tabla-contenedor').innerHTML = html;
+
+        dibujarGrafica('bar', nits, [
+            { label: 'IVA Emitido', data: emitido, backgroundColor: 'rgba(54, 162, 235, 0.6)' },
+            { label: 'IVA Recibido', data: recibido, backgroundColor: 'rgba(255, 99, 132, 0.6)' }
+        ]);
+    }
+
+    async function resumenRango() {
+        const inicio = document.getElementById('inicioRango').value;
+        const fin = document.getElementById('finRango').value;
+        const conIva = document.getElementById('formatoRango').value;
+
+        if(!inicio || !fin) return alert("Selecciona ambas fechas");
+
+        const res = await fetch(`${baseUrl}/totales-fecha?inicio=${inicio}&fin=${fin}&ver_con_iva=${conIva}`);
+        const data = await res.json();
+
+        let textoTipo = conIva === 'true' ? "Total con IVA" : "Valor sin IVA";
+        document.getElementById('titulo-resultado').innerText = `Resumen por Fecha (${textoTipo})`;
+
+        let html = `<table class="table table-bordered"><tr><th>Fecha</th><th>${textoTipo}</th></tr>`;
+        let fechas = [], valores = [];
+
+        data.forEach(d => {
+            html += `<tr><td>${d.fecha}</td><td>Q${d.valor.toFixed(2)}</td></tr>`;
+            fechas.push(d.fecha);
+            valores.push(d.valor);
+        });
+        html += `</table>`;
+        document.getElementById('tabla-contenedor').innerHTML = html;
+
+        dibujarGrafica('line', fechas, [
+            { label: textoTipo, data: valores, borderColor: 'rgba(75, 192, 192, 1)', fill: false }
+        ]);
+    }
+
+    function dibujarGrafica(tipo, labels, datasets) {
+        destruirGrafica();
+        const ctx = document.getElementById('miGrafica');
+        ctx.style.display = 'block';
+        chartInstance = new Chart(ctx, {
+            type: tipo,
+            data: { labels: labels, datasets: datasets },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    }
+
+    function destruirGrafica() {
+        if (chartInstance) chartInstance.destroy();
+        document.getElementById('miGrafica').style.display = 'none';
+    }
+
+    function exportarPDF() {
+        // 1. Ocultamos la interfaz que no debe salir en el PDF
+        const seccionFormularios = document.getElementById('seccion-formularios');
+        const botonExportar = document.getElementById('btn-exportar');
+        const navegacion = document.querySelector('nav');
+        const titulo = document.getElementById('titulo-principal');
+        const footer = document.querySelector('footer');
+
+        if(seccionFormularios) seccionFormularios.style.display = 'none';
+        if(botonExportar) botonExportar.style.display = 'none';
+        if(navegacion) navegacion.style.display = 'none';
+        if(titulo) titulo.style.display = 'none';
+        if(footer) footer.style.display = 'none';
+
+        // 2. Disparamos la impresión limpia
+        window.print();
+
+        // 3. Devolvemos la interfaz a la normalidad
+        if(seccionFormularios) seccionFormularios.style.display = 'flex';
+        if(botonExportar) botonExportar.style.display = 'block';
+        if(navegacion) navegacion.style.display = 'block';
+        if(titulo) titulo.style.display = 'block';
+        if(footer) footer.style.display = 'block';
+    }
+</script>
