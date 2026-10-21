@@ -1,10 +1,60 @@
 ﻿@page
 @model IndexModel
 @{
-    ViewData["Title"] = "Home page";
+    ViewData["Title"] = "Enviar Mensaje e Inicializar";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="container mt-4">
+    <h2>Gestión de Mensajes JSON</h2>
+
+    @if (TempData["Mensaje"] != null)
+    {
+        <div class="alert alert-info">@TempData["Mensaje"]</div>
+    }
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Actualizar RTU (Contribuyentes)</h5>
+                    <form method="post" enctype="multipart/form-data" asp-page-handler="CargarRtu">
+                        <div class="mb-3">
+                            <label class="form-label">Seleccionar archivo .json</label>
+                            <input type="file" class="form-control" name="archivo_rtu" accept=".json" required />
+                        </div>
+                        <button type="submit" class="btn btn-primary">Enviar RTU</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Solicitar Autorización (Facturas)</h5>
+                    <form method="post" enctype="multipart/form-data" asp-page-handler="CargarFacturas">
+                        <div class="mb-3">
+                            <label class="form-label">Seleccionar archivo .json</label>
+                            <input type="file" class="form-control" name="archivo_facturas" accept=".json" required />
+                        </div>
+                        <button type="submit" class="btn btn-success">Enviar Facturas</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-danger">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-danger">Devolver al Estado Inicial</h5>
+                    <p>Esta acción limpiará todos los archivos almacenados en el servidor.</p>
+                    <form method="post" asp-page-handler="Inicializar">
+                        <button type="submit" class="btn btn-danger">Inicializar Sistema</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
