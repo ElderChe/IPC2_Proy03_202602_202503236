@@ -11,7 +11,7 @@ namespace SAT.Frontend.Pages
 
         public IndexModel()
         {
-            // Evitamos problemas con los certificados locales de desarrollo
+            
             var manejador = new HttpClientHandler
             {
                 ServerCertificateCustomValidationCallback = (mensaje, certificado, cadena, errores) => true

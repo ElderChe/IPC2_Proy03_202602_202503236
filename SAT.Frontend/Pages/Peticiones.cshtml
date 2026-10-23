@@ -4,7 +4,7 @@
     ViewData["Title"] = "Peticiones y Reportes";
 }
 
-<!-- Librería para Gráficas -->
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <div class="container mt-4" id="area-reporte">
@@ -12,7 +12,7 @@
     <button class="btn btn-danger mb-4" onclick="exportarPDF()" id="btn-exportar">Exportar Reporte a PDF</button>
 
     <div class="row" id="seccion-formularios">
-        <!-- 1. Consultar Contribuyente -->
+        
         <div class="col-md-4 mb-3">
             <div class="card p-3 shadow-sm h-100">
                 <h5>1. Consultar Contribuyente</h5>
@@ -31,7 +31,7 @@
             </div>
         </div>
 
-        <!-- 2. Resumen IVA -->
+        
         <div class="col-md-4 mb-3">
             <div class="card p-3 shadow-sm h-100">
                 <h5>2. Resumen de IVA por Fecha</h5>
@@ -41,7 +41,7 @@
             </div>
         </div>
 
-        <!-- 3. Resumen por Rango -->
+        
         <div class="col-md-4 mb-3">
             <div class="card p-3 shadow-sm h-100">
                 <h5>3. Resumen por Rango</h5>
@@ -59,7 +59,7 @@
         </div>
     </div>
 
-    <!-- Zona de Resultados -->
+    
     <div class="mt-4" id="resultados">
         <h4 id="titulo-resultado">Resultados aparecerán aquí...</h4>
         <div id="tabla-contenedor" class="table-responsive mb-4"></div>
@@ -166,7 +166,7 @@
     }
 
     function exportarPDF() {
-        // 1. Ocultamos la interfaz que no debe salir en el PDF
+        
         const seccionFormularios = document.getElementById('seccion-formularios');
         const botonExportar = document.getElementById('btn-exportar');
         const navegacion = document.querySelector('nav');
@@ -179,10 +179,10 @@
         if(titulo) titulo.style.display = 'none';
         if(footer) footer.style.display = 'none';
 
-        // 2. Disparamos la impresión limpia
+        
         window.print();
 
-        // 3. Devolvemos la interfaz a la normalidad
+
         if(seccionFormularios) seccionFormularios.style.display = 'flex';
         if(botonExportar) botonExportar.style.display = 'block';
         if(navegacion) navegacion.style.display = 'block';

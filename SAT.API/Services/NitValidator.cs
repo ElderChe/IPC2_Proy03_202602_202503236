@@ -14,7 +14,7 @@
             if (!long.TryParse(cuerpo, out _)) return false;
 
             int suma = 0;
-            int posicion = 2; // Posición 1 es el verificador; el cuerpo inicia en posición 2
+            int posicion = 2; 
 
             for (int i = cuerpo.Length - 1; i >= 0; i--)
             {

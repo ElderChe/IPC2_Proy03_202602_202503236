@@ -10,7 +10,7 @@ namespace SAT.API.Controllers
     {
         private ManejoArchivos archivos_locales = new ManejoArchivos();
 
-        // RUTA 1: Recibe el JSON de los contribuyentes
+        
         [HttpPost("cargar-rtu")]
         public IActionResult CargarRtu([FromBody] List<Contribuyente> lista_entrante)
         {
@@ -43,7 +43,7 @@ namespace SAT.API.Controllers
             return Ok(respuesta);
         }
 
-        // RUTA 2: Recibe y procesa las solicitudes de factura
+        //  Recibe y procesa las solicitudes de factura
         [HttpPost("solicitar-autorizacion")]
         public IActionResult SolicitarAutorizacion([FromBody] List<FacturaRequest> facturas_entrantes)
         {
@@ -67,7 +67,7 @@ namespace SAT.API.Controllers
                     TieneErrores = false
                 };
 
-                // 1. Extraer la fecha ignorando texto basura como "Guatemala,"
+                // La cosa del date extractor solo extrae la fecha y no lo demas 
                 var extraccion_fecha = DateExtractor.ExtraerFecha(factura.Tiempo);
                 if (extraccion_fecha.EsValida)
                 {
@@ -75,12 +75,12 @@ namespace SAT.API.Controllers
                 }
                 else
                 {
-                    // Si el regex no halló fecha válida, no pasa.
+                    
                     factura_procesada.TieneErrores = true;
                     factura_procesada.ListaDeErrores.Add("FECHA con formato inválido");
                 }
 
-                // 2. Revisar si la Referencia ya existe en las que traemos o en las guardadas
+                // referencia si existo o non
                 bool ref_duplicada = facturas_registradas.Any(f => f.Ref == factura.Referencia) ||
                                      facturas_a_guardar.Any(f => f.Ref == factura.Referencia);
                 if (ref_duplicada)
@@ -89,7 +89,7 @@ namespace SAT.API.Controllers
                     factura_procesada.ListaDeErrores.Add("REFERENCIA duplicada");
                 }
 
-                // 3. Validar si el Emisor existe en el RTU
+                //  esto de aca es para validar si el emisor existe en el RTU 
                 if (!rtu.Any(c => c.Nit == factura.NitEmisor))
                 {
                     factura_procesada.TieneErrores = true;
@@ -97,7 +97,7 @@ namespace SAT.API.Controllers
                     respuesta.Resultado.RechazadasEmisorInexistente++;
                 }
 
-                // 4. Validar si el Receptor existe en el RTU
+                
                 if (!rtu.Any(c => c.Nit == factura.NitReceptor))
                 {
                     factura_procesada.TieneErrores = true;
@@ -105,7 +105,7 @@ namespace SAT.API.Controllers
                     respuesta.Resultado.RechazadasReceptorInexistente++;
                 }
 
-                // 5. Revisión matemática
+                
                 decimal iva_calculado = Math.Round(factura.Valor * 0.12m, 2);
                 if (factura.Iva != iva_calculado)
                 {
@@ -120,7 +120,7 @@ namespace SAT.API.Controllers
                     factura_procesada.ListaDeErrores.Add("TOTAL mal calculado");
                 }
 
-                // 6. Si no hubo errores, aprobarla y generar su numero largo
+                
                 if (!factura_procesada.TieneErrores)
                 {
                     factura_procesada.NumeroAutorizacion = archivos_locales.GenerarNumeroDeAutorizacion(factura_procesada.FechaHoraReal);
@@ -140,7 +140,7 @@ namespace SAT.API.Controllers
             return Ok(respuesta);
         }
 
-        // RUTA 3: Botón de pánico para borrar todos los txt y json
+        
         [HttpDelete("limpiar-datos")]
         public IActionResult LimpiarDatos()
         {
